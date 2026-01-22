@@ -1,43 +1,36 @@
 use session6;
 
-create table ex4_orders(
-	orderID int primary key,
-    customerID int,
-    orderDate date
-);
+-- Thêm một đơn hàng mới vào bảng orders và chi tiết của đơn hàng đó vào bảng order_details.
+insert into orders value
+(1006, 5, 20250202);
+insert into order_details value
+(1006, 104, 2, 1099.00);
 
-create table ex4_order_details(
-	orderID int,
-    productID int,
-    quantity int,
-    price decimal(10,2),
-    constraint FK_ex4_1
-		foreign key (orderID)
-        references ex4_orders(orderID)
-);
+-- Tính tổng doanh thu của toàn bộ cửa hàng.
+select sum(quantity*price) as `tổng doanh thu` from order_details;
 
-insert into ex4_orders (orderID, customerID, orderDate) values
-(1, 101, '2025-01-01'),
-(2, 102, '2025-01-02'),
-(3, 103, '2025-01-03'),
-(4, 104, '2025-01-04');
+-- Tính doanh thu trung bình của mỗi đơn hàng.
+select 
+	order_id,
+    avg(price*quantity) `doanh thu trung bình`
+from order_details
+group by order_id;
 
-insert into ex4_order_details (orderID, productID, quantity, price) values
--- Order 1
-(1, 1, 2, 1200.00),   -- Laptop
-(1, 2, 1,  999.99),   -- Phone
 
--- Order 2
-(2, 1, 1, 1200.00),
-(2, 3, 3,   60.00),   -- Clothing
+-- Tìm và hiển thị thông tin của đơn hàng có doanh thu cao nhất.
+select 
+	order_id `đơn có doanh thu cao nhất`,
+    sum(price*quantity) `doanh thu cao nhất`
+from order_details
+group by order_id
+order by `doanh thu cao nhất` desc limit 1;
 
--- Order 3
-(3, 2, 2,  999.99),
-(3, 3, 5,   60.00),
-
--- Order 4
-(4, 1, 3, 1200.00),
-(4, 2, 1,  999.99),
-(4, 3, 2,   60.00);
+-- Tìm và hiển thị danh sách 3 sản phẩm bán chạy nhất dựa trên tổng số lượng đã bán.
+select 
+	p.product_name,
+    od.quantity
+from products p
+inner join order_details od on p.id = od.product_id
+order by od.quantity desc limit 3; 
 
 

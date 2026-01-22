@@ -1,0 +1,136 @@
+Bước 1: Xác định kết quả cuối cùng cần lấy
+👉 Câu hỏi: Màn hình cuối cùng cần hiển thị gì?
+
+Bước 2: Xác định mỗi cột lấy từ bảng nào
+
+Bước 3: Xác định mối quan hệ giữa các bảng
+
+Bước 4: Xác định phép toán đặc biệt (COUNT, SUM, AVG...)
+
+Bước 5: Xác định GROUP BY theo cái gì
+
+🧩 GHÉP LOGIC THÀNH SQL
+
+
+★　sp thấp nhất trong từng danh mục
+
+products (
+  id,
+  name,
+  price,
+  category_id
+)
+
+b1: hình dung ra 2 bảng product: 
+	1) bảng 1 lấy id_danh mục và giá sản phẩm thấp nhất
+	2) bảng 2 lấy thông tin sản phẩm
+	
+b2: join 2 bảng lại với nhau bằng id danh mục và giá
+
+select p.* from products p 
+inner join (
+  select p1.category_id, min(p1.price) as `minimum price` 
+  from products p1 
+  group by p1.category_id
+) as pp
+on p.category_id = pp.category_id
+and p.price = pp.`minimum price`;
+
+▲ lấy phần không giao
+
+select 
+  p.*,
+from products p 
+left join order_detail od on p.id = od.product_id
+where od.order_id is null;
+
+★　-- Tìm những khách hàng đã mua sản phẩm thuộc danh mục có số lượng sản phẩm lớn nhất.
+ cách 1 : bị thiếu dữ liệu nếu trùng
+
+select
+  c.id,
+  c.name
+from customers c 
+inner join orders o on c.id = o.customer_id
+inner join order_detail od on o.id = od.order_id
+inner join products p on od.product_id = p.id
+inner join categories ca on p.category_id = ca.id
+where ca.id = (
+  select categories.id 
+  from categories 
+  inner join products
+  on categories.id = products.category_id
+  group by id
+  order by count(products.category_id) desc limit 1
+)
+group by c.id;
+
+ cách 2 : không thiếu dữ liệu khi trùng
+
+SELECT DISTINCT c.id, c.name
+FROM customers c
+JOIN orders o ON c.id = o.customer_id
+JOIN order_detail od ON o.id = od.order_id
+JOIN products p ON od.product_id = p.id
+WHERE p.category_id IN (
+    SELECT category_id
+    FROM products
+    GROUP BY category_id
+    HAVING COUNT(*) = (
+        SELECT MAX(cnt)
+        FROM (
+            SELECT COUNT(*) AS cnt
+            FROM products
+            GROUP BY category_id
+        ) t
+    )
+);
+
+説明：
+--  b1 mỗi danh mục có bao nhiêu sản phẩm
+select category_id, count(*) from products group by category_id;
+
+-- b2 danh mục nào có số lượng sản phẩm lớn nhất
+select max(cnt) from(
+	select count(*) as cnt from products
+    group by category_id
+) temp;
+
+-- b3 danh mục nào có số lượng sản phẩm lớn nhất
+select 
+	category_id
+from products
+group by category_id
+having count(*) = (
+	select max(cnt) from (
+		select count(*) as cnt from products
+        group by category_id
+    ) temp
+);
+
+-- b4 join các bảng và tìm người sản phẩm có mã sản phẩm đó
+select 
+	c.id,
+    c.customer_name,
+    p.product_name
+from customers c 
+inner join orders o on c.id = o.customer_id
+inner join order_details od on o.id = od.order_id
+inner join products p on od.product_id = p.id
+where p.category_id = (
+	select category_id 
+	from products
+	group by category_id
+	having count(*) = (
+		select max(cnt) from (
+			select count(*) as cnt from products
+			group by category_id
+		) temp
+	)
+);
+
+▲　IFNULL(,) phải nằm trong SELECT 
+
+
+▲　`` dấu backtick dùng cho tên cột, tên bảng
+    '' dấu nháy đơn dùng cho chuỗi
