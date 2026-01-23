@@ -7,6 +7,4 @@ create table products(
     price decimal(19,2)
 );
 
-create index idx_category on products(category);
-
-create index idx_price on products(price);
+create index idx_category_price on products(category, price);
