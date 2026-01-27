@@ -18,4 +18,5 @@ select
 	student_id, 
     full_name,
     birth_date
-from ex1_students;
+from ex1_students
+where student_id in ('SV001','SV004','SV005');
